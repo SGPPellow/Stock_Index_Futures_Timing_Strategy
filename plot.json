@@ -1,0 +1,1 @@
+{"data": [{"hovertemplate": "<b>Date</b>: %{x|%Y-%m-%d}<br><b>Position</b>: %{text}", "line": {"color": "#0d5081", "width": 2}, "mode": "lines", "name": "", "text": 

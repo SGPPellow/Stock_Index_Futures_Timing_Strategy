@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Signal1 Table</title>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 6px; }
+    th { background-color: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h2>Signal1 Table</h2>
+
+  <label for="start">Start date:</label>
+  <input type="date" id="start" />
+  <label for="end">End date:</label>
+  <input type="date" id="end" />
+  <button onclick="filterData()">Filter</button>
+
+  <table id="data-table">
+    <thead><tr><th>Date</th><th>Signal1</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let data = [];
+
+    // Load data from local file
+    fetch("data.json")
+      .then(res => res.json())
+      .then(json => {
+        data = json;
+        renderTable(data);  // show all by default
+      });
+
+    // Render rows in the table
+    function renderTable(rows) {
+      const tbody = document.querySelector("#data-table tbody");
+      tbody.innerHTML = "";  // clear old content
+      for (const row of rows) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${row.date}</td><td>${row.Signal1}</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Filter data by date range
+    function filterData() {
+      const start = document.getElementById("start").value;
+      const end = document.getElementById("end").value;
+      const startDate = start ? luxon.DateTime.fromISO(start) : null;
+      const endDate = end ? luxon.DateTime.fromISO(end) : null;
+
+      const filtered = data.filter(row => {
+        const date = luxon.DateTime.fromISO(row.date);
+        return (!startDate || date >= startDate) &&
+               (!endDate || date <= endDate);
+      });
+
+      renderTable(filtered);
+    }
+  </script>
+</body>
+</html>
