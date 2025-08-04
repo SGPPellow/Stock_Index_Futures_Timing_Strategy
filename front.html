@@ -2,39 +2,48 @@
 <html>
 <head>
   <title>Signal1 Graph</title>
-  <script src="https://cdn.plot.ly/plotly-6.2.0.min.js" ></script>
+  <script src="https://cdn.plot.ly/plotly-3.1.0-rc.1.min.js" charset="utf-8"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
+  <h2>Select Strategy</h2>
+  <select id="strategySelect">
+    <option value="1">Strategy 1</option>
+    <option value="2">Strategy 2</option>
+    <option value="3">Strategy 3</option>
+    <option value="4">Strategy 4</option>
+    <option value="5">Strategy 5</option>
+  </select>
   <div id="plot"></div>
   <script>
-    const CSV =
-    "C:/Users/Administrator/Desktop/Quant/Stock_Index_Futures_Timing_Strategy/output.csv";
+    let csvdata = [];
 
-    function plotFromCSV() {
-        Plotly.d3.csv(CSV, function(err, rows) {
-            console.log(rows);
-            // processData(rows);
-        });
-    }
+    
+    d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv")
+        .then(function(data) {
+          csvdata = data;
+          // console.log(data);
+        })
+    
+    
+    function processData(allRows) {
+        let x = [];
+        let y = [];
+        let row;
 
-    // function processData(allRows) {
-    //     let x = [];
-    //     let y = [];
-    //     let row;
-
-    //     let i = 0;
-    //     while (i < allRows.length) {
-    //         row = allRows[i];
-    //         x.push(row["date"]);
-    //         y.push(row["Signal1_rtn"]);
-    //         i += 1;
-    //     }
+        let i = 0;
+        while (i < allRows.length) {
+            row = allRows[i];
+            x.push(row["date"]);
+            y.push(row["Signal1_rtn"]);
+            i += 1;
+        }
         
-    //     console.log("X", x);
-    //     console.log("Y", y);
+        console.log("X", x);
+        console.log("Y", y);
 
-    //     makePlotly(x, y,);
-    // }
+        makePlotly(x, y,);
+    }
 
     // function makePlotly(x, y) {
     //     let traces = [
@@ -51,9 +60,7 @@
 
     //     let layout = {
     //         title: "Basic Line Chart",
-    //         yaxis: {
-    //             range: [0, 100]
-    //         },
+    //         yaxis: {},
     //         xaxis: {
     //             // tickformat: "%d/%m/%y"
     //         },
