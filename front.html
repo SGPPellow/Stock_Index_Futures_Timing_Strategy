@@ -7,12 +7,12 @@
 </head>
 <body>
   <h2>Select Strategy</h2>
-  <select id="strategySelect">
-    <option value="1">Strategy 1</option>
-    <option value="2">Strategy 2</option>
-    <option value="3">Strategy 3</option>
-    <option value="4">Strategy 4</option>
-    <option value="5">Strategy 5</option>
+  <select id="策略选择">
+    <option value="1">动量因子风格择时信号</option>
+    <option value="2">拥挤度动量因子风格择时信号</option>
+    <option value="3">相对强弱动量因子风格择时信号(大盘价值指数和小盘成长指数)</option>
+    <option value="4">相对强弱动量因子风格择时信号(沪深300指数和中证1000指数)</option>
+    <option value="5">多维动量复合风格择时对冲信号</option>
   </select>
   <div id="plot"></div>
   <script>
@@ -22,28 +22,51 @@
     d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv")
         .then(function(data) {
           csvdata = data;
+          plotStrategy(1);
           // console.log(data);
         })
     
-    
-    function processData(allRows) {
-        let x = [];
-        let y = [];
-        let row;
+    function plotStrategy(n) {
+      const x = csvdata.map(row => row.date)
+      const y = csvdata.map(row => +row[`Signal${n}_rtn`])
 
-        let i = 0;
-        while (i < allRows.length) {
-            row = allRows[i];
-            x.push(row["date"]);
-            y.push(row["Signal1_rtn"]);
-            i += 1;
-        }
-        
-        console.log("X", x);
-        console.log("Y", y);
+      const trace = {
+        x: x,
+        y: y,
+        mode: 'lines+markers',
+        name: `Strategy ${n}`,
+        line: { color: 'royalblue' }
+      }
 
-        makePlotly(x, y,);
+      Plotly.newPlot('plot',[trace],{
+        title: `Return of Strategy ${n}`,
+        xaxis: { title: 'Date' },
+        yaxis: { title: 'Return' }
+      });
     }
+    
+    document.getElementById("策略选择").addEventListener('change',function(e) {
+      const strategyNum = +e.target.value;
+      plotStrategy(strategyNum)
+    })
+    // function processData(allRows) {
+    //     let x = [];
+    //     let y = [];
+    //     let row;
+
+    //     let i = 0;
+    //     while (i < allRows.length) {
+    //         row = allRows[i];
+    //         x.push(row["date"]);
+    //         y.push(row["Signal1_rtn"]);
+    //         i += 1;
+    //     }
+        
+    //     console.log("X", x);
+    //     console.log("Y", y);
+
+    //     makePlotly(x, y,);
+    // }
 
     // function makePlotly(x, y) {
     //     let traces = [
