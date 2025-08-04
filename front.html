@@ -1,71 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Signal1 Table</title>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js" ></script>
+  <title>Signal1 Graph</title>
+  <script src="https://cdn.plot.ly/plotly-6.2.0.min.js" ></script>
 </head>
 <body>
-  <div id="graphDiv"></div>
+  <div id="plot"></div>
   <script>
-    const csv = "https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv?token=GHSAT0AAAAAADIHCLBG52PWJNJCGZIN4YGK2EQCB3A"
+    const CSV =
+    "C:/Users/Administrator/Desktop/Quant/Stock_Index_Futures_Timing_Strategy/output.csv";
 
     function plotFromCSV() {
         Plotly.d3.csv(CSV, function(err, rows) {
             console.log(rows);
-            processData(rows);
+            // processData(rows);
         });
     }
-    
-    function processData(allRows) {
-        let x = [];
-        let y = [];
-        let row;
 
-        let i = 0;
-        while (i < allRows.length) {
-            row = allRows[i];
-            x.push(row["date"]);
-            y.push(row["Signal1_rtn"]);
-            i += 1;
-        }    
-        console.log("X", x);
-        console.log("Y", y);
+    // function processData(allRows) {
+    //     let x = [];
+    //     let y = [];
+    //     let row;
 
-        makePlotly(x, y);
-    } 
+    //     let i = 0;
+    //     while (i < allRows.length) {
+    //         row = allRows[i];
+    //         x.push(row["date"]);
+    //         y.push(row["Signal1_rtn"]);
+    //         i += 1;
+    //     }
+        
+    //     console.log("X", x);
+    //     console.log("Y", y);
 
-    function makePlotly(x) {
-        let traces = [
-            {
-                x: x,
-                y: y,
-                name: "A",
-                line: {
-                    color: "#387fba",
-                    width: 3
-                }
-            },    
-        ];
+    //     makePlotly(x, y,);
+    // }
 
-        let layout = {
-            title: "Basic Line Chart",
-            yaxis: {
-                range: [0, 10]
-            },
-            xaxis: {
-                // tickformat: "%d/%m/%y"
-            },
-        };
+    // function makePlotly(x, y) {
+    //     let traces = [
+    //         {
+    //             x: x,
+    //             y: y,
+    //             name: "A",
+    //             line: {
+    //                 color: "#387fba",
+    //                 width: 3
+    //             }
+    //         }
+    //     ];
 
-    //https://plot.ly/javascript/configuration-options/
-        let config = { 
-            responsive: true,
-            // staticPlot: true,
-            // editable: true
-        };
+    //     let layout = {
+    //         title: "Basic Line Chart",
+    //         yaxis: {
+    //             range: [0, 100]
+    //         },
+    //         xaxis: {
+    //             // tickformat: "%d/%m/%y"
+    //         },
+    //     };
 
-        Plotly.newPlot("graphDiv", traces, layout, config);
-    }
+    //     //https://plot.ly/javascript/configuration-options/
+    //     let config = { 
+    //         responsive: true,
+    //         // staticPlot: true,
+    //         // editable: true
+    //     };
+
+    //     Plotly.newPlot("plot", traces, layout, config);
+    // }
+
+    // plotFromCSV();
+
 
 
   </script>
