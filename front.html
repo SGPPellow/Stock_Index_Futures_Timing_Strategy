@@ -2,64 +2,72 @@
 <html>
 <head>
   <title>Signal1 Table</title>
-  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
-  <style>
-    body { font-family: Arial; margin: 20px; }
-    table, th, td { border: 1px solid black; border-collapse: collapse; padding: 6px; }
-    th { background-color: #f0f0f0; }
-  </style>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js" ></script>
 </head>
 <body>
-  <h2>Signal1 Table</h2>
-
-  <label for="start">Start date:</label>
-  <input type="date" id="start" />
-  <label for="end">End date:</label>
-  <input type="date" id="end" />
-  <button onclick="filterData()">Filter</button>
-
-  <table id="data-table">
-    <thead><tr><th>Date</th><th>Signal1</th></tr></thead>
-    <tbody></tbody>
-  </table>
-
+  <div id="graphDiv"></div>
   <script>
-    let data = [];
+    const csv = "https://github.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/blob/main/index_data.csv"
 
-    // Load data from local file
-    fetch("data.json")
-      .then(res => res.json())
-      .then(json => {
-        data = json;
-        renderTable(data);  // show all by default
-      });
+    function plotFromCSV() {
+        Plotly.d3.csv(CSV, function(err, rows) {
+            console.log(rows);
+            processData(rows);
+        });
+    }
+    
+    function processData(allRows) {
+        let x = [];
+        let y = [];
+        let row;
 
-    // Render rows in the table
-    function renderTable(rows) {
-      const tbody = document.querySelector("#data-table tbody");
-      tbody.innerHTML = "";  // clear old content
-      for (const row of rows) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${row.date}</td><td>${row.Signal1}</td>`;
-        tbody.appendChild(tr);
-      }
+        let i = 0;
+        while (i < allRows.length) {
+            row = allRows[i];
+            x.push(row["date"]);
+            y1.push(row["Signal1"]);
+            i += 1;
+        }    
+        console.log("X", x);
+        console.log("Y", y);
+
+        makePlotly(x, y);
+    } 
+
+    function makePlotly(x) {
+        let traces = [
+            {
+                x: x,
+                y: y,
+                name: "A",
+                line: {
+                    color: "#387fba",
+                    width: 3
+                }
+            },    
+        ];
+
+        let layout = {
+            title: "Basic Line Chart",
+            yaxis: {
+                range: [0, 100]
+            },
+            xaxis: {
+                // tickformat: "%d/%m/%y"
+            },
+        };
+
+    //https://plot.ly/javascript/configuration-options/
+        let config = { 
+            responsive: true,
+            // staticPlot: true,
+            // editable: true
+        };
+
+        Plotly.newPlot("graphDiv", traces, layout, config);
     }
 
-    // Filter data by date range
-    function filterData() {
-      const start = document.getElementById("start").value;
-      const end = document.getElementById("end").value;
-      const startDate = start ? luxon.DateTime.fromISO(start) : null;
-      const endDate = end ? luxon.DateTime.fromISO(end) : null;
 
-      const filtered = data.filter(row => {
-        const date = luxon.DateTime.fromISO(row.date);
-        return (!startDate || date >= startDate) &&
-               (!endDate || date <= endDate);
-      });
-
-      renderTable(filtered);
-    }
   </script>
 </body>
 </html>
