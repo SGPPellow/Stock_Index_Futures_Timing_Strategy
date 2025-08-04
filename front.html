@@ -7,7 +7,7 @@
 <body>
   <div id="graphDiv"></div>
   <script>
-    const csv = "https://github.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/blob/main/index_data.csv"
+    const csv = "https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv?token=GHSAT0AAAAAADIHCLBG52PWJNJCGZIN4YGK2EQCB3A"
 
     function plotFromCSV() {
         Plotly.d3.csv(CSV, function(err, rows) {
@@ -25,7 +25,7 @@
         while (i < allRows.length) {
             row = allRows[i];
             x.push(row["date"]);
-            y1.push(row["Signal1"]);
+            y.push(row["Signal1_rtn"]);
             i += 1;
         }    
         console.log("X", x);
@@ -50,7 +50,7 @@
         let layout = {
             title: "Basic Line Chart",
             yaxis: {
-                range: [0, 100]
+                range: [0, 10]
             },
             xaxis: {
                 // tickformat: "%d/%m/%y"
