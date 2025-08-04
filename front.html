@@ -1,108 +1,169 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Signal1 Graph</title>
+  <title>股指择时策略</title>
   <script src="https://cdn.plot.ly/plotly-3.1.0-rc.1.min.js" charset="utf-8"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    /* Container style for centering */
+
+    /* Style for the select element */
+    select {
+      padding: 12px 20px;
+      font-size: 18px;
+      font-family: 'system-ui';
+      /* border: 2px solid #45c6a8; */
+      border-radius: 8px;
+      background-color: white;
+      color: #333;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.3s ease;
+      width: auto;
+    }
+
+    /* Focused (active) state for select */
+    select:focus {
+      border-color: #1f77b4;
+      box-shadow: 0 0 8px rgba(52, 178, 161, 0.5);
+    }
+
+    /* Hover effect */
+    select:hover {
+      border-color: #1f77b4;
+    }
+
+    #plot {
+      width: 2500px;
+      height: 1000px;
+      /* or any fixed width you like */
+      margin: 0 0 0 0;
+      /* top, right, bottom, left */
+      padding: 10px;
+      border-radius: 16px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  </style>
 </head>
+
 <body>
-  <h2>Select Strategy</h2>
-  <select id="策略选择">
+  <h2 style="font-family: system-ui">股指择时策略</h2>
+  <select id="strategy_select">
     <option value="1">动量因子风格择时信号</option>
     <option value="2">拥挤度动量因子风格择时信号</option>
     <option value="3">相对强弱动量因子风格择时信号(大盘价值指数和小盘成长指数)</option>
     <option value="4">相对强弱动量因子风格择时信号(沪深300指数和中证1000指数)</option>
     <option value="5">多维动量复合风格择时对冲信号</option>
   </select>
+
+  <select id="year_select">
+    <option value="All">All</option>
+    <option value="2010">2010</option>
+    <option value="2011">2011</option>
+    <option value="2012">2012</option>
+    <option value="2013">2013</option>
+    <option value="2014">2014</option>
+    <option value="2015">2015</option>
+    <option value="2016">2016</option>
+    <option value="2017">2017</option>
+    <option value="2018">2018</option>
+    <option value="2019">2019</option>
+    <option value="2020">2020</option>
+    <option value="2021">2021</option>
+    <option value="2022">2022</option>
+    <option value="2023">2023</option>
+    <option value="2024">2024</option>
+    <option value="2025">2025</option>
+  </select>
   <div id="plot"></div>
   <script>
     let csvdata = [];
 
-    
+
     d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv")
-        .then(function(data) {
-          csvdata = data;
-          plotStrategy(1);
-          // console.log(data);
-        })
-    
-    function plotStrategy(n) {
-      const x = csvdata.map(row => row.date)
-      const y = csvdata.map(row => +row[`Signal${n}_rtn`])
+      .then(function (data) {
+        csvdata = data;
+        plotStrategy(1, 'All');
+        // console.log(data);
+      })
+
+
+
+    function plotStrategy(n, timerange) {
+      const filteredData = timerange === 'All'
+        ? csvdata // Use all data
+        : csvdata.filter(row => row.date.startsWith(timerange));
+      const x = filteredData.map(row => row.date)
+      const y = filteredData.map(row => +row[`Signal${n}_rtn`])
+      const position = filteredData.map(row => row[`Position${n}`])
 
       const trace = {
         x: x,
         y: y,
-        mode: 'lines+markers',
-        name: `Strategy ${n}`,
-        line: { color: 'royalblue' }
+        mode: 'lines',
+        name: '',
+        text: position,
+        line: {
+          color: '#1f77b4',  // <-- this controls the line color
+          width: 2
+        },
+        hovertemplate: '<b>Date</b>: %{x|%Y-%m-%d}<br>' + '<b>Value</b>: %{y}<br>' + '<b>Position</b>: %{text}'
       }
 
-      Plotly.newPlot('plot',[trace],{
-        title: `Return of Strategy ${n}`,
-        xaxis: { title: 'Date' },
-        yaxis: { title: 'Return' }
-      });
+
+      const layout = {
+        title: { text: '' },
+        xaxis: {
+          type: 'date',
+          // rangeslider: { visible: true }   // <-- This adds the range slider
+        },
+        xaxis: {
+          type: 'date',
+          // rangeslider: {
+          //   visible: true,
+          //   thickness: 0.1,  // default is 0.15, lower = thinner
+          //   bgcolor: '#ddd',
+          //   bordercolor: '#888',
+          //   borderwidth: 1
+          // },
+          // rangeselector: {
+          //   buttons: [
+          //     { step: 'all', label: 'All' },
+          //     {
+          //       label: '2024', // Set label for button
+          //       step: 'all',   // Will use custom range defined in relayout
+          //       stepmode: 'backward',
+          //       clickmode: 'event+select' // Trigger the relayout function
+          //     }
+          //   ]
+          // }
+        },
+        yaxis: {
+          tickformat: ",.0f"
+        },
+        hoverlabel: {
+          align: 'left'  // force left-aligned text
+        },
+        // dragmode: 'pan'
+      };
+
+      Plotly.newPlot('plot', [trace], layout);
     }
-    
-    document.getElementById("策略选择").addEventListener('change',function(e) {
+
+    document.getElementById("strategy_select").addEventListener('change', function (e) {
       const strategyNum = +e.target.value;
-      plotStrategy(strategyNum)
+      plotStrategy(strategyNum, 'All')
     })
-    // function processData(allRows) {
-    //     let x = [];
-    //     let y = [];
-    //     let row;
 
-    //     let i = 0;
-    //     while (i < allRows.length) {
-    //         row = allRows[i];
-    //         x.push(row["date"]);
-    //         y.push(row["Signal1_rtn"]);
-    //         i += 1;
-    //     }
-        
-    //     console.log("X", x);
-    //     console.log("Y", y);
-
-    //     makePlotly(x, y,);
-    // }
-
-    // function makePlotly(x, y) {
-    //     let traces = [
-    //         {
-    //             x: x,
-    //             y: y,
-    //             name: "A",
-    //             line: {
-    //                 color: "#387fba",
-    //                 width: 3
-    //             }
-    //         }
-    //     ];
-
-    //     let layout = {
-    //         title: "Basic Line Chart",
-    //         yaxis: {},
-    //         xaxis: {
-    //             // tickformat: "%d/%m/%y"
-    //         },
-    //     };
-
-    //     //https://plot.ly/javascript/configuration-options/
-    //     let config = { 
-    //         responsive: true,
-    //         // staticPlot: true,
-    //         // editable: true
-    //     };
-
-    //     Plotly.newPlot("plot", traces, layout, config);
-    // }
-
-    // plotFromCSV();
-
-
+    document.getElementById("year_select").addEventListener('change', function (e) {
+      const year = e.target.value;
+      const strategyNum = document.getElementById("strategy_select").value;
+      plotStrategy(strategyNum, year);
+    });
 
   </script>
 </body>
+
 </html>
