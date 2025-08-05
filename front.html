@@ -21,6 +21,7 @@
       outline: none;
       transition: all 0.3s ease;
       width: auto;
+      margin-left: 15px;
     }
 
     /* Focused (active) state for select */
@@ -45,12 +46,22 @@
       background-color: #ffffff;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
+
+    #space1 {
+      display: inline-block;
+      width: 4em;
+    }
+
+    #space2 {
+      display: inline-block;
+      width: 9.5em;
+    }
   </style>
 </head>
 
 <body>
   <!-- <input type="file" id="fileInput" accept=".csv" /> -->
-  <h2 style="font-family: system-ui">股指择时策略</h2>
+  <h2 style="font-family: system-ui; margin-left: 15px;">股指择时策略</h2>
   <select id="strategy_select">
     <option value="1">动量因子风格择时信号</option>
     <option value="2">拥挤度动量因子风格择时信号</option>
@@ -78,8 +89,16 @@
     <option value="2024">2024</option>
     <option value="2025">2025</option>
   </select>
-  <div id="plot"></div>
-  <div id="return"></div>
+  <div id="plot">
+    <div id="return"
+      style="position: absolute; top: 140px; left: 10px; background-color: rgba(255, 255, 255, 0.7); padding: 5px 10px; font-size: 20px; color: #333; border-radius: 5px;">
+    </div>
+    <div id="max_Drawdown"
+      style="position: absolute; top: 180px; left: 10px; background-color: rgba(255, 255, 255, 0.7); padding: 5px 10px; font-size: 20px; color: #333; border-radius: 5px;">
+    </div>
+    <div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>
+  </div>
+
   <script>
     let csvdata = [];
     // document.getElementById("fileInput").addEventListener("change", function (event) {
@@ -102,12 +121,12 @@
       .then(function (data) {
         csvdata = data;
         plotStrategy(1, 'All');
-        console.log("csvdata:", csvdata);
       })
 
-
-
     function plotStrategy(n, year) {
+
+      calculatePerformanceMetrics(n, year);
+
       const filteredData = year === 'All'
         ? csvdata // Use all data
         : csvdata.filter(row => row.date.startsWith(year));
@@ -128,56 +147,120 @@
         hovertemplate: '<b>Date</b>: %{x|%Y-%m-%d}<br>' + '<b>Value</b>: %{y}<br>' + '<b>Position</b>: %{text}'
       }
 
-
       const layout = {
         title: { text: '' },
         xaxis: {
-          type: 'date',
-          // rangeslider: { visible: true }   // <-- This adds the range slider
+          type: 'date'
         },
         xaxis: {
-          type: 'date',
-          // rangeslider: {
-          //   visible: true,
-          //   thickness: 0.1,  // default is 0.15, lower = thinner
-          //   bgcolor: '#ddd',
-          //   bordercolor: '#888',
-          //   borderwidth: 1
-          // },
-          // rangeselector: {
-          //   buttons: [
-          //     { step: 'all', label: 'All' },
-          //     {
-          //       label: '2024', // Set label for button
-          //       step: 'all',   // Will use custom range defined in relayout
-          //       stepmode: 'backward',
-          //       clickmode: 'event+select' // Trigger the relayout function
-          //     }
-          //   ]
-          // }
+          type: 'date'
         },
         yaxis: {
           tickformat: ",.0f"
         },
         hoverlabel: {
-          align: 'left'  // force left-aligned text
-        },
-        // dragmode: 'pan'
+          align: 'left',  // force left-aligned text
+          font: {
+            size: 18,
+          }
+        }
       };
 
       Plotly.newPlot('plot', [trace], layout);
-      calculatePerformanceMetrics();
+
     }
 
     function calculatePerformanceMetrics(n, year) {
-      const lastDayOfPreviousYear = getLastTradingDay(year - 1);
-      const lastDayOfCurrentYear = getLastTradingDay(year);
-      const sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
-      const startValue = sampleData[0][[`Signal${n}_Value`]];
-      const endValue = sampleData[-1][[`Signal${n}_Value`]]
-      const returnPercentage = ((endValue - startValue) / startValue) * 100;
-      document.getElementById('return').innerHTML = `Return from ${lastDayOfPreviousYear} to ${lastDayOfCurrentYear}: ${returnPercentage.toFixed(2)}%`;
-      // document.getElementById('max_drawdown').innerHTML = `Max Drawdown: ${maxDrawdown.toFixed(2)}%`;
+      var startValue;
+      var sampleData;
+      if (year === 'All') {
+        sampleData = csvdata;
+        startValue = 500000;
+        startDate = sampleData[0]['date'];
+
+      } else if (year === '2010') {
+        sampleData = csvdata.filter(row => row.date.startsWith(year));
+        startValue = 500000;
+        startDate = sampleData[0]['date'];
+      } else {
+        lastDayOfPreviousYear = getLastTradingDay(year - 1);
+        lastDayOfCurrentYear = getLastTradingDay(year);
+        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
+        startValue = sampleData[0][[`Signal${n}_Value`]]
+        startDate = getFirstTradingDay(year);
+      }
+
+      var endDate = sampleData[sampleData.length - 1]['date'];
+      var endValue = sampleData[sampleData.length - 1][[`Signal${n}_Value`]]
+      var returnPercentage = ((endValue - startValue) / startValue) * 100;
+      var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
+      let peak = startValue;
+      var peakTime;
+      var allPeakTime;
+      var allLowTime;
+      let maxDrawdown = 0;
+
+      for (let i = 1; i < sampleData.length; i++) {
+        if (sampleData[i][`Signal${n}_Value`] > peak) {
+          peak = sampleData[i][`Signal${n}_Value`];
+          peakTime = sampleData[i]['date'];
+        } else {
+          const drawdown = (peak - sampleData[i][`Signal${n}_Value`]) / peak * 100;
+          if (drawdown > maxDrawdown) {
+            maxDrawdown = drawdown;
+            allPeakTime = peakTime;
+            allLowTime = sampleData[i]['date'];
+          }
+        }
+      }
+
+      let tableHTML;
+      if (year === 'All') {
+        tableHTML = `
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px;">
+            <tbody>
+              <tr>
+                <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+                <td style="padding: 10px;"><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      } else {
+        tableHTML = `
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px;">
+            <tbody>
+              <tr>
+                <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+                <td style="padding: 10px;"><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+              </tr>
+              <tr>
+                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+
+      document.getElementById('metricsTableContainer').innerHTML = tableHTML;
+      // if (year === 'All') {
+      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%<span id="space2"></span><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%`;
+      // } else {
+      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%`;
+      // }
+      // document.getElementById('max_Drawdown').innerHTML = `<b>最大回撤</b>: &nbsp&nbsp${maxDrawdown.toFixed(2)}%<span id="space2"></span><b>最大回撤发生时间:</b>&nbsp&nbsp${allPeakTime} ~ ${allLowTime}`;
+    }
+
+    function getFirstTradingDay(year) {
+      const yearData = csvdata.filter(row => row.date.startsWith(year))
+      const sortedYearData = yearData.sort((a, b) => b.date.localeCompare(a.date));
+      return sortedYearData.length > 0 ? sortedYearData[sortedYearData.length - 1]['date'] : null;
     }
 
     function getLastTradingDay(year) {
@@ -185,12 +268,13 @@
       const endDate = `${year}-12-31`;
       const yearData = csvdata.filter(row => row.date >= startDate && row.date <= endDate);
       const sortedYearData = yearData.sort((a, b) => b.date.localeCompare(a.date));
-      return sortedYearData.length > 0 ? sortedYearData[0].date : null;
+      return sortedYearData.length > 0 ? sortedYearData[0]['date'] : null;
     }
 
     document.getElementById("strategy_select").addEventListener('change', function (e) {
       const strategyNum = +e.target.value;
-      plotStrategy(strategyNum, 'All')
+      const year = document.getElementById("year_select").value;
+      plotStrategy(strategyNum, year);
     })
 
     document.getElementById("year_select").addEventListener('change', function (e) {
