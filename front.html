@@ -117,12 +117,25 @@
 
       calculatePerformanceMetrics(n, year);
 
-      const filteredData = year === 'All'
-        ? csvdata
-        : csvdata.filter(row => row.date.startsWith(year));
-      const x = filteredData.map(row => row.date)
-      const y = filteredData.map(row => +row[`Signal${n}_Value`])
-      const position = filteredData.map(row => row[`Position${n}`])
+      // const filteredData = year === 'All'
+      //   ? csvdata
+      //   : csvdata.filter(row => row.date.startsWith(year));
+
+      var sampleData;
+      if (year === 'All') {
+        sampleData = csvdata;
+      } else if (year === '2010') {
+        sampleData = csvdata.filter(row => row.date.startsWith(year));
+      } else {
+        lastDayOfPreviousYear = getLastTradingDay(year - 1);
+        lastDayOfCurrentYear = getLastTradingDay(year);
+        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
+        scaleSignalColumnsToStartAt500k(sampleData, n);
+      }
+
+      const x = sampleData.map(row => row.date)
+      const y = sampleData.map(row => +row[`Signal${n}_Value`])
+      const position = sampleData.map(row => row[`Position${n}`])
 
       const trace = {
         x: x,
@@ -159,23 +172,40 @@
       Plotly.newPlot('plot', [trace], layout);
 
     }
-    console.log()
+
     function calculatePerformanceMetrics(n, year) {
-      var startValue;
+
+      // var sampleData;
+      // var startDate;
+      // if (year === 'All') {
+      //   sampleData = csvdata;
+      //   startValue = 500000;
+      //   startDate = sampleData[0]['date'];
+      // } else if (year === '2010') {
+      //   sampleData = csvdata.filter(row => row.date.startsWith(year));
+      //   startValue = 500000;
+      //   startDate = sampleData[0]['date'];
+      // } else {
+      //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
+      //   lastDayOfCurrentYear = getLastTradingDay(year);
+      //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
+      //   startValue = sampleData[0][`Signal${n}_Value`];
+      //   startDate = getFirstTradingDay(year);
+      // }
+      var startValue = 500000;
       var sampleData;
+      var startDate;
       if (year === 'All') {
         sampleData = csvdata;
-        startValue = 500000;
         startDate = sampleData[0]['date'];
       } else if (year === '2010') {
         sampleData = csvdata.filter(row => row.date.startsWith(year));
-        startValue = 500000;
         startDate = sampleData[0]['date'];
       } else {
         lastDayOfPreviousYear = getLastTradingDay(year - 1);
         lastDayOfCurrentYear = getLastTradingDay(year);
-        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
-        startValue = sampleData[0][[`Signal${n}_Value`]]
+        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
+        scaleSignalColumnsToStartAt500k(sampleData, n);
         startDate = getFirstTradingDay(year);
       }
 
@@ -183,6 +213,7 @@
       var endValue = sampleData[sampleData.length - 1][[`Signal${n}_Value`]]
       var returnPercentage = ((endValue - startValue) / startValue) * 100;
       var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
+
       let peak = startValue;
       var peakTime = 0;
       var allPeakTime = 0;
@@ -250,6 +281,17 @@
       //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%`;
       // }
       // document.getElementById('max_Drawdown').innerHTML = `<b>最大回撤</b>: &nbsp&nbsp${maxDrawdown.toFixed(2)}%<span id="space2"></span><b>最大回撤发生时间:</b>&nbsp&nbsp${allPeakTime} ~ ${allLowTime}`;
+    }
+
+    function scaleSignalColumnsToStartAt500k(data, n) {
+
+      const firstValue = data[0][`Signal${n}_Value`];
+      const scaleFactor = 500000 / firstValue;
+
+      data.forEach(function (d) {
+        d[`Signal${n}_Value`] *= scaleFactor;
+      });
+
     }
 
     function getFirstTradingDay(year) {
