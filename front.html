@@ -6,14 +6,10 @@
   <script src="https://cdn.plot.ly/plotly-3.1.0-rc.1.min.js" charset="utf-8"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
-    /* Container style for centering */
-
-    /* Style for the select element */
     select {
       padding: 12px 20px;
       font-size: 18px;
       font-family: 'system-ui';
-      /* border: 2px solid #45c6a8; */
       border-radius: 8px;
       background-color: white;
       color: #333;
@@ -24,13 +20,11 @@
       margin-left: 15px;
     }
 
-    /* Focused (active) state for select */
     select:focus {
       border-color: #1f77b4;
       box-shadow: 0 0 8px rgba(52, 178, 161, 0.5);
     }
 
-    /* Hover effect */
     select:hover {
       border-color: #1f77b4;
     }
@@ -38,23 +32,11 @@
     #plot {
       width: 2500px;
       height: 1000px;
-      /* or any fixed width you like */
       margin: 0 0 0 0;
-      /* top, right, bottom, left */
       padding: 10px;
       border-radius: 16px;
       background-color: #ffffff;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    #space1 {
-      display: inline-block;
-      width: 4em;
-    }
-
-    #space2 {
-      display: inline-block;
-      width: 9.5em;
     }
   </style>
 </head>
@@ -90,12 +72,6 @@
     <option value="2025">2025</option>
   </select>
   <div id="plot">
-    <div id="return"
-      style="position: absolute; top: 140px; left: 10px; background-color: rgba(255, 255, 255, 0.7); padding: 5px 10px; font-size: 20px; color: #333; border-radius: 5px;">
-    </div>
-    <div id="max_Drawdown"
-      style="position: absolute; top: 180px; left: 10px; background-color: rgba(255, 255, 255, 0.7); padding: 5px 10px; font-size: 20px; color: #333; border-radius: 5px;">
-    </div>
     <div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>
   </div>
 
@@ -117,7 +93,21 @@
     // });
 
 
-    d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv")
+    d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv", function (d) {
+      return {
+        date: d.date,
+        Signal1_Value: +d.Signal1_Value,
+        Position1: d.Position1,
+        Signal2_Value: +d.Signal2_Value,
+        Position2: d.Position2,
+        Signal3_Value: +d.Signal3_Value,
+        Position3: d.Position3,
+        Signal4_Value: +d.Signal4_Value,
+        Position4: d.Position4,
+        Signal5_Value: +d.Signal5_Value,
+        Position5: d.Position5
+      }
+    })
       .then(function (data) {
         csvdata = data;
         plotStrategy(1, 'All');
@@ -128,7 +118,7 @@
       calculatePerformanceMetrics(n, year);
 
       const filteredData = year === 'All'
-        ? csvdata // Use all data
+        ? csvdata
         : csvdata.filter(row => row.date.startsWith(year));
       const x = filteredData.map(row => row.date)
       const y = filteredData.map(row => +row[`Signal${n}_Value`])
@@ -141,7 +131,7 @@
         name: '',
         text: position,
         line: {
-          color: '#1f77b4',  // <-- this controls the line color
+          color: '#1f77b4',
           width: 2
         },
         hovertemplate: '<b>Date</b>: %{x|%Y-%m-%d}<br>' + '<b>Value</b>: %{y}<br>' + '<b>Position</b>: %{text}'
@@ -159,7 +149,7 @@
           tickformat: ",.0f"
         },
         hoverlabel: {
-          align: 'left',  // force left-aligned text
+          align: 'left',
           font: {
             size: 18,
           }
@@ -169,7 +159,7 @@
       Plotly.newPlot('plot', [trace], layout);
 
     }
-
+    console.log()
     function calculatePerformanceMetrics(n, year) {
       var startValue;
       var sampleData;
@@ -177,7 +167,6 @@
         sampleData = csvdata;
         startValue = 500000;
         startDate = sampleData[0]['date'];
-
       } else if (year === '2010') {
         sampleData = csvdata.filter(row => row.date.startsWith(year));
         startValue = 500000;
@@ -195,9 +184,9 @@
       var returnPercentage = ((endValue - startValue) / startValue) * 100;
       var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
       let peak = startValue;
-      var peakTime;
-      var allPeakTime;
-      var allLowTime;
+      var peakTime = 0;
+      var allPeakTime = 0;
+      var allLowTime = 0;
       let maxDrawdown = 0;
 
       for (let i = 1; i < sampleData.length; i++) {
@@ -217,14 +206,17 @@
       let tableHTML;
       if (year === 'All') {
         tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px;">
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 200%;">
             <tbody>
               <tr>
-                <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-                <td style="padding: 10px;"><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
-                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
               </tr>
               <tr>
+                <td style="padding: 10px;"><b>累计收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
                 <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
                 <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
               </tr>
@@ -233,13 +225,16 @@
         `;
       } else {
         tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px;">
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 200%;">
             <tbody>
               <tr>
                 <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-                <td style="padding: 10px;"><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+                <td style="padding: 10px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+                <td style="padding: 10px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+                <td style="padding: 10px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
               </tr>
-              <tr>
+              <tr> 
+                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>
                 <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
                 <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
               </tr>
