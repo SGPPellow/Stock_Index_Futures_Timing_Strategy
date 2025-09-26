@@ -96,15 +96,15 @@
     d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv", function (d) {
       return {
         date: d.date,
-        Signal1_Value: +d.Signal1_Value,
+        Signal1_day_rtn: +d.Signal1_day_rtn,
         Position1: d.Position1,
-        Signal2_Value: +d.Signal2_Value,
+        Signal2_day_rtn: +d.Signal2_day_rtn,
         Position2: d.Position2,
-        Signal3_Value: +d.Signal3_Value,
+        Signal3_day_rtn: +d.Signal3_day_rtn,
         Position3: d.Position3,
-        Signal4_Value: +d.Signal4_Value,
+        Signal4_day_rtn: +d.Signal4_day_rtn,
         Position4: d.Position4,
-        Signal5_Value: +d.Signal5_Value,
+        Signal5_day_rtn: +d.Signal5_day_rtn,
         Position5: d.Position5
       }
     })
@@ -127,6 +127,21 @@
       } else {
         sampleData = csvdata.filter(row => row.date.startsWith(year));
       }
+      let c1 = 1, c2 = 1, c3 = 1, c4 = 1, c5 = 1;
+      sampleData.forEach(d => {
+        c1 *= d.Signal1_day_rtn;
+        c2 *= d.Signal2_day_rtn;
+        c3 *= d.Signal3_day_rtn;
+        c4 *= d.Signal4_day_rtn;
+        c5 *= d.Signal5_day_rtn;
+        d.Signal1_cum_rtn = c1;
+        d.Signal2_cum_rtn = c2;
+        d.Signal3_cum_rtn = c3;
+        d.Signal4_cum_rtn = c4;
+        d.Signal5_cum_rtn = c5;
+      });
+
+      console.log(sampleData)
       // } else if (year === '2010') {
       //   sampleData = csvdata.filter(row => row.date.startsWith(year));
       // } else {
@@ -137,7 +152,7 @@
       // }
 
       const x = sampleData.map(row => row.date)
-      const y = sampleData.map(row => +row[`Signal${n}_Value`])
+      const y = sampleData.map(row => +row[`Signal${n}_cum_rtn`])
       const position = sampleData.map(row => row[`Position${n}`])
 
       const trace = {
@@ -270,7 +285,7 @@
     //     `;
     //   }
 
-    document.getElementById('metricsTableContainer').innerHTML = tableHTML;
+    // document.getElementById('metricsTableContainer').innerHTML = tableHTML;
     // if (year === 'All') {
     //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%<span id="space2"></span><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%`;
     // } else {
