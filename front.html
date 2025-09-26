@@ -45,14 +45,15 @@
   <!-- <input type="file" id="fileInput" accept=".csv" /> -->
   <h2 style="font-family: system-ui; margin-left: 15px;">股指择时策略</h2>
   <select id="strategy_select">
+    <option value="5">多维动量复合风格择时对冲信号</option>
     <option value="1">动量因子风格择时信号</option>
     <option value="2">拥挤度动量因子风格择时信号</option>
     <option value="3">相对强弱动量因子风格择时信号(大盘价值指数和小盘成长指数)</option>
     <option value="4">相对强弱动量因子风格择时信号(沪深300指数和中证1000指数)</option>
-    <option value="5">多维动量复合风格择时对冲信号</option>
   </select>
 
   <select id="year_select">
+    <option value="2025">2025</option>
     <option value="All">All</option>
     <option value="2010">2010</option>
     <option value="2011">2011</option>
@@ -69,7 +70,11 @@
     <option value="2022">2022</option>
     <option value="2023">2023</option>
     <option value="2024">2024</option>
-    <option value="2025">2025</option>
+
+  </select>
+  <select id="page_select">
+    <option value="资金曲线">资金曲线</option>
+    <option value="每日信号">每日信号</option>
   </select>
   <div id="plot">
     <div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>
@@ -110,16 +115,10 @@
     })
       .then(function (data) {
         csvdata = data;
-        plotStrategy(1, 'All');
+        updatePage();
       })
 
     function plotStrategy(n, year) {
-
-      calculatePerformanceMetrics(n, year);
-
-      // const filteredData = year === 'All'
-      //   ? csvdata
-      //   : csvdata.filter(row => row.date.startsWith(year));
 
       var sampleData;
       if (year === 'All') {
@@ -140,15 +139,6 @@
         d.Signal4_cum_value = c4;
         d.Signal5_cum_value = c5;
       });
-
-      // } else if (year === '2010') {
-      //   sampleData = csvdata.filter(row => row.date.startsWith(year));
-      // } else {
-      //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
-      //   lastDayOfCurrentYear = getLastTradingDay(year);
-      //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
-      //   scaleSignalColumnsToStartAt500k(sampleData, n);
-      // }
 
       const x = sampleData.map(row => row.date)
       const y = sampleData.map(row => +row[`Signal${n}_cum_value`])
@@ -187,28 +177,12 @@
       };
 
       Plotly.newPlot('plot', [trace], layout);
+      calculatePerformanceMetrics(n, year);
 
     }
 
     function calculatePerformanceMetrics(n, year) {
 
-      // var sampleData;
-      // var startDate;
-      // if (year === 'All') {
-      //   sampleData = csvdata;
-      //   startValue = 500000;
-      //   startDate = sampleData[0]['date'];
-      // } else if (year === '2010') {
-      //   sampleData = csvdata.filter(row => row.date.startsWith(year));
-      //   startValue = 500000;
-      //   startDate = sampleData[0]['date'];
-      // } else {
-      //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
-      //   lastDayOfCurrentYear = getLastTradingDay(year);
-      //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
-      //   startValue = sampleData[0][`Signal${n}_Value`];
-      //   startDate = getFirstTradingDay(year);
-      // }
       var startValue = 500000;
       var sampleData;
       var startDate;
@@ -217,14 +191,11 @@
       } else {
         sampleData = csvdata.filter(row => row.date.startsWith(year));
       }
-      console.log(sampleData)
       startDate = sampleData[0]['date'];
-      console.log(startDate)
       var endDate = sampleData[sampleData.length - 1]['date'];
       var endValue = sampleData[sampleData.length - 1][[`Signal${n}_cum_value`]]
       var returnPercentage = ((endValue - startValue) / startValue) * 100;
       var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
-      console.log(sampleData[sampleData.length - 1])
       let peak = startValue;
       var peakTime = 0;
       var allPeakTime = 0;
@@ -245,80 +216,89 @@
         }
       }
 
-      // let tableHTML;
-      // if (year === 'All') {
-      //   tableHTML = `
-      //     <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
-      //       <tbody>
-      //         <tr>
-      //           <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-      //           <td style="padding: 10px; padding-right: 60px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
-      //           <td style="padding: 10px; padding-right: 60px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
-      //           <td style="padding: 10px; padding-right: 60px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
-      //         </tr>
-      //         <tr>
-      //           <td style="padding: 10px;"><b>累计收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
-      //           <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
-      //           <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
-      //           <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
-      //         </tr>
-      //       </tbody>
-      //     </table>
-      //   `;
-      // } else {
-      //   tableHTML = `
-      //     <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
-      //       <tbody>
-      //         <tr>
-      //           <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-      //           <td style="padding: 10px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
-      //           <td style="padding: 10px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
-      //           <td style="padding: 10px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
-      //         </tr>
-      //         <tr> 
-      //           <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>
-      //           <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
-      //           <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
-      //         </tr>
-      //       </tbody>
-      //     </table>
-      //   `;
-      // }
+      let tableHTML;
+      if (year === 'All') {
+        tableHTML = `
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+            <tbody>
+              <tr>
+                <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+                <td style="padding: 10px; padding-right: 60px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
+              </tr>
+              <tr>
+                <td style="padding: 10px;"><b>累计收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      } else {
+        tableHTML = `
+          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+            <tbody>
+              <tr>
+                <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+                <td style="padding: 10px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+                <td style="padding: 10px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+                <td style="padding: 10px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
+              </tr>
+              <tr> 
+                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
 
-      // document.getElementById('metricsTableContainer').innerHTML = tableHTML;
-      // if (year === 'All') {
-      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%<span id="space2"></span><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%`;
-      // } else {
-      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%`;
-      // }
-      // document.getElementById('max_Drawdown').innerHTML = `<b>最大回撤</b>: &nbsp&nbsp${maxDrawdown.toFixed(2)}%<span id="space2"></span><b>最大回撤发生时间:</b>&nbsp&nbsp${allPeakTime} ~ ${allLowTime}`;
+      document.getElementById('metricsTableContainer').innerHTML = tableHTML;
     }
 
-    function getFirstTradingDay(year) {
-      const yearData = csvdata.filter(row => row.date.startsWith(year))
-      const sortedYearData = yearData.sort((a, b) => b.date.localeCompare(a.date));
-      return sortedYearData.length > 0 ? sortedYearData[sortedYearData.length - 1]['date'] : null;
+    function updatePage() {
+      const strategyNum = +strategy_select.value;
+      const year = year_select.value;
+      const page = page_select.value;
+
+      // Clear previous plot and table first
+      document.getElementById('plot').innerHTML = `<div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>`;
+
+      if (page === "资金曲线") {
+        // Call your existing functions
+        console.log(strategyNum)
+        plotStrategy(strategyNum, year);
+      } else if (page === "每日信号") {
+        // Leave everything blank for now
+        // Later you can write your new page logic here
+        document.getElementById('plot').innerHTML = `<div id="metricsTableContainer"></div>`;
+      }
     }
 
-    function getLastTradingDay(year) {
-      const startDate = `${year}-01-01`
-      const endDate = `${year}-12-31`;
-      const yearData = csvdata.filter(row => row.date >= startDate && row.date <= endDate);
-      const sortedYearData = yearData.sort((a, b) => b.date.localeCompare(a.date));
-      return sortedYearData.length > 0 ? sortedYearData[0]['date'] : null;
-    }
+    strategy_select.addEventListener('change', updatePage);
+    year_select.addEventListener('change', updatePage);
+    page_select.addEventListener('change', updatePage);
 
-    document.getElementById("strategy_select").addEventListener('change', function (e) {
-      const strategyNum = +e.target.value;
-      const year = document.getElementById("year_select").value;
-      plotStrategy(strategyNum, year);
-    })
 
-    document.getElementById("year_select").addEventListener('change', function (e) {
-      const year = e.target.value;
-      const strategyNum = document.getElementById("strategy_select").value;
-      plotStrategy(strategyNum, year);
-    });
+    // document.getElementById("strategy_select").addEventListener('change', function (e) {
+    //   const strategyNum = +e.target.value;
+    //   const year = document.getElementById("year_select").value;
+    //   if (mode == '资金曲线') {
+    //     plotStrategy(strategyNum, year);
+    //   }
+
+    // })
+
+    // document.getElementById("year_select").addEventListener('change', function (e) {
+    //   const year = e.target.value;
+    //   const strategyNum = document.getElementById("strategy_select").value;
+    //   if (mode == '资金曲线') {
+    //     plotStrategy(strategyNum, year);
+    //   }
+    // });
 
   </script>
 </body>
