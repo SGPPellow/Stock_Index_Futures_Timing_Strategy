@@ -115,7 +115,7 @@
 
     function plotStrategy(n, year) {
 
-      calculatePerformanceMetrics(n, year);
+      // calculatePerformanceMetrics(n, year);
 
       // const filteredData = year === 'All'
       //   ? csvdata
@@ -124,14 +124,17 @@
       var sampleData;
       if (year === 'All') {
         sampleData = csvdata;
-      } else if (year === '2010') {
-        sampleData = csvdata.filter(row => row.date.startsWith(year));
       } else {
-        lastDayOfPreviousYear = getLastTradingDay(year - 1);
-        lastDayOfCurrentYear = getLastTradingDay(year);
-        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
-        scaleSignalColumnsToStartAt500k(sampleData, n);
+        sampleData = csvdata.filter(row => row.date.startsWith(year));
       }
+      // } else if (year === '2010') {
+      //   sampleData = csvdata.filter(row => row.date.startsWith(year));
+      // } else {
+      //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
+      //   lastDayOfCurrentYear = getLastTradingDay(year);
+      //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
+      //   scaleSignalColumnsToStartAt500k(sampleData, n);
+      // }
 
       const x = sampleData.map(row => row.date)
       const y = sampleData.map(row => +row[`Signal${n}_Value`])
@@ -173,126 +176,119 @@
 
     }
 
-    function calculatePerformanceMetrics(n, year) {
+    // function calculatePerformanceMetrics(n, year) {
 
-      // var sampleData;
-      // var startDate;
-      // if (year === 'All') {
-      //   sampleData = csvdata;
-      //   startValue = 500000;
-      //   startDate = sampleData[0]['date'];
-      // } else if (year === '2010') {
-      //   sampleData = csvdata.filter(row => row.date.startsWith(year));
-      //   startValue = 500000;
-      //   startDate = sampleData[0]['date'];
-      // } else {
-      //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
-      //   lastDayOfCurrentYear = getLastTradingDay(year);
-      //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
-      //   startValue = sampleData[0][`Signal${n}_Value`];
-      //   startDate = getFirstTradingDay(year);
-      // }
-      var startValue = 500000;
-      var sampleData;
-      var startDate;
-      if (year === 'All') {
-        sampleData = csvdata;
-        startDate = sampleData[0]['date'];
-      } else if (year === '2010') {
-        sampleData = csvdata.filter(row => row.date.startsWith(year));
-        startDate = sampleData[0]['date'];
-      } else {
-        lastDayOfPreviousYear = getLastTradingDay(year - 1);
-        lastDayOfCurrentYear = getLastTradingDay(year);
-        sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear).map(row => ({ ...row }));
-        scaleSignalColumnsToStartAt500k(sampleData, n);
-        startDate = getFirstTradingDay(year);
-      }
+    //   // var sampleData;
+    //   // var startDate;
+    //   // if (year === 'All') {
+    //   //   sampleData = csvdata;
+    //   //   startValue = 500000;
+    //   //   startDate = sampleData[0]['date'];
+    //   // } else if (year === '2010') {
+    //   //   sampleData = csvdata.filter(row => row.date.startsWith(year));
+    //   //   startValue = 500000;
+    //   //   startDate = sampleData[0]['date'];
+    //   // } else {
+    //   //   lastDayOfPreviousYear = getLastTradingDay(year - 1);
+    //   //   lastDayOfCurrentYear = getLastTradingDay(year);
+    //   //   sampleData = csvdata.filter(row => row.date >= lastDayOfPreviousYear && row.date <= lastDayOfCurrentYear);
+    //   //   startValue = sampleData[0][`Signal${n}_Value`];
+    //   //   startDate = getFirstTradingDay(year);
+    //   // }
+    //   var startValue = 500000;
+    //   var sampleData;
+    //   var startDate;
+    //   if (year === 'All') {
+    //     sampleData = csvdata;
+    //   } else {
+    //     sampleData = csvdata.filter(row => row.date.startsWith(year));
+    //   }
 
-      var endDate = sampleData[sampleData.length - 1]['date'];
-      var endValue = sampleData[sampleData.length - 1][[`Signal${n}_Value`]]
-      var returnPercentage = ((endValue - startValue) / startValue) * 100;
-      var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
+    //   startDate = sampleData[0]['date'];
+    //   var endDate = sampleData[sampleData.length - 1]['date'];
+    //   var endValue = sampleData[sampleData.length - 1][[`Signal${n}_Value`]]
+    //   var returnPercentage = ((endValue - startValue) / startValue) * 100;
+    //   var annualReturn = ((endValue / startValue) ** (250 / sampleData.length) - 1) * 100;
 
-      let peak = startValue;
-      var peakTime = 0;
-      var allPeakTime = 0;
-      var allLowTime = 0;
-      let maxDrawdown = 0;
+    //   let peak = startValue;
+    //   var peakTime = 0;
+    //   var allPeakTime = 0;
+    //   var allLowTime = 0;
+    //   let maxDrawdown = 0;
 
-      for (let i = 1; i < sampleData.length; i++) {
-        if (sampleData[i][`Signal${n}_Value`] > peak) {
-          peak = sampleData[i][`Signal${n}_Value`];
-          peakTime = sampleData[i]['date'];
-        } else {
-          const drawdown = (peak - sampleData[i][`Signal${n}_Value`]) / peak * 100;
-          if (drawdown > maxDrawdown) {
-            maxDrawdown = drawdown;
-            allPeakTime = peakTime;
-            allLowTime = sampleData[i]['date'];
-          }
-        }
-      }
+    //   for (let i = 1; i < sampleData.length; i++) {
+    //     if (sampleData[i][`Signal${n}_Value`] > peak) {
+    //       peak = sampleData[i][`Signal${n}_Value`];
+    //       peakTime = sampleData[i]['date'];
+    //     } else {
+    //       const drawdown = (peak - sampleData[i][`Signal${n}_Value`]) / peak * 100;
+    //       if (drawdown > maxDrawdown) {
+    //         maxDrawdown = drawdown;
+    //         allPeakTime = peakTime;
+    //         allLowTime = sampleData[i]['date'];
+    //       }
+    //     }
+    //   }
 
-      let tableHTML;
-      if (year === 'All') {
-        tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
-            <tbody>
-              <tr>
-                <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-                <td style="padding: 10px; padding-right: 60px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
-                <td style="padding: 10px; padding-right: 60px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
-                <td style="padding: 10px; padding-right: 60px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
-              </tr>
-              <tr>
-                <td style="padding: 10px;"><b>累计收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
-                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
-                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
-                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
-              </tr>
-            </tbody>
-          </table>
-        `;
-      } else {
-        tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
-            <tbody>
-              <tr>
-                <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
-                <td style="padding: 10px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
-                <td style="padding: 10px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
-                <td style="padding: 10px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
-              </tr>
-              <tr> 
-                <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>
-                <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
-                <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
-              </tr>
-            </tbody>
-          </table>
-        `;
-      }
+    //   let tableHTML;
+    //   if (year === 'All') {
+    //     tableHTML = `
+    //       <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+    //         <tbody>
+    //           <tr>
+    //             <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+    //             <td style="padding: 10px; padding-right: 60px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+    //             <td style="padding: 10px; padding-right: 60px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+    //             <td style="padding: 10px; padding-right: 60px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
+    //           </tr>
+    //           <tr>
+    //             <td style="padding: 10px;"><b>累计收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>  
+    //             <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%</td>
+    //             <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+    //             <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+    //           </tr>
+    //         </tbody>
+    //       </table>
+    //     `;
+    //   } else {
+    //     tableHTML = `
+    //       <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+    //         <tbody>
+    //           <tr>
+    //             <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
+    //             <td style="padding: 10px;"><b>期初资金</b>:&nbsp&nbsp${startValue.toFixed(0)}</td>
+    //             <td style="padding: 10px;"><b>期末资金</b>:&nbsp&nbsp${endValue.toFixed(0)}</td>
+    //             <td style="padding: 10px;"><b>净资金变动</b>:&nbsp&nbsp${(endValue - startValue).toFixed(0)} </td>
+    //           </tr>
+    //           <tr> 
+    //             <td style="padding: 10px;"><b>年化收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%</td>
+    //             <td style="padding: 10px;"><b>最大回撤</b>:&nbsp&nbsp${maxDrawdown.toFixed(2)}%</td>
+    //             <td style="padding: 10px;"><b>最大回撤发生时间</b>:&nbsp&nbsp${allPeakTime} ~ ${allLowTime}</td>
+    //           </tr>
+    //         </tbody>
+    //       </table>
+    //     `;
+    //   }
 
-      document.getElementById('metricsTableContainer').innerHTML = tableHTML;
-      // if (year === 'All') {
-      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%<span id="space2"></span><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%`;
-      // } else {
-      //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%`;
-      // }
-      // document.getElementById('max_Drawdown').innerHTML = `<b>最大回撤</b>: &nbsp&nbsp${maxDrawdown.toFixed(2)}%<span id="space2"></span><b>最大回撤发生时间:</b>&nbsp&nbsp${allPeakTime} ~ ${allLowTime}`;
-    }
+    document.getElementById('metricsTableContainer').innerHTML = tableHTML;
+    // if (year === 'All') {
+    //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%<span id="space2"></span><b>年化收益率</b>:&nbsp&nbsp${annualReturn.toFixed(2)}%`;
+    // } else {
+    //   document.getElementById('return').innerHTML = `<b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}<span id="space1"></span><b>收益率</b>:&nbsp&nbsp${returnPercentage.toFixed(2)}%`;
+    // }
+    // document.getElementById('max_Drawdown').innerHTML = `<b>最大回撤</b>: &nbsp&nbsp${maxDrawdown.toFixed(2)}%<span id="space2"></span><b>最大回撤发生时间:</b>&nbsp&nbsp${allPeakTime} ~ ${allLowTime}`;
+    // }
 
-    function scaleSignalColumnsToStartAt500k(data, n) {
+    // function scaleSignalColumnsToStartAt500k(data, n) {
 
-      const firstValue = data[0][`Signal${n}_Value`];
-      const scaleFactor = 500000 / firstValue;
+    //   const firstValue = data[0][`Signal${n}_Value`];
+    //   const scaleFactor = 500000 / firstValue;
 
-      data.forEach(function (d) {
-        d[`Signal${n}_Value`] *= scaleFactor;
-      });
+    //   data.forEach(function (d) {
+    //     d[`Signal${n}_Value`] *= scaleFactor;
+    //   });
 
-    }
+    // }
 
     function getFirstTradingDay(year) {
       const yearData = csvdata.filter(row => row.date.startsWith(year))
