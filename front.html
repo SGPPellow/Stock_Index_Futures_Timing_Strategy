@@ -7,12 +7,12 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     select {
-      padding: 12px 20px;
+      padding: 8px 8px;
       font-size: 18px;
-      font-family: 'system-ui';
-      border-radius: 8px;
-      background-color: white;
-      color: #333;
+      font-family: '"Heiti SC"';
+      border-radius: 4px;
+      background-color: rgb(255, 254, 254);
+      color: #000000;
       cursor: pointer;
       outline: none;
       transition: all 0.3s ease;
@@ -20,30 +20,33 @@
       margin-left: 15px;
     }
 
-    select:focus {
-      border-color: #1f77b4;
-      box-shadow: 0 0 8px rgba(52, 178, 161, 0.5);
-    }
-
-    select:hover {
-      border-color: #1f77b4;
-    }
 
     #plot {
       width: 2500px;
-      height: 1000px;
+      height: 1100px;
       margin: 0 0 0 0;
       padding: 10px;
       border-radius: 16px;
-      background-color: #ffffff;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #metricsTableContainer table {
+      width: 100%;
+      /* 👈 take up full page width */
+      border-collapse: collapse;
+      font-size: 20px;
+    }
+
+    #metricsTableContainer th,
+    #metricsTableContainer td {
+      /* 👈 space inside cells */
+      white-space: nowrap;
     }
   </style>
 </head>
 
 <body>
   <!-- <input type="file" id="fileInput" accept=".csv" /> -->
-  <h2 style="font-family: system-ui; margin-left: 15px;">股指择时策略</h2>
+  <h2 style="font-family: Heiti SC; margin-left: 15px; color: #2b2a2a;">股指择时策略</h2>
   <select id="strategy_select">
     <option value="5">多维动量复合风格择时对冲信号</option>
     <option value="1">动量因子风格择时信号</option>
@@ -76,63 +79,45 @@
     <option value="资金曲线">资金曲线</option>
     <option value="每日信号">每日信号</option>
   </select>
-  <div id="plot">
-    <div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>
+  <div id=display>
+    <div id="metricsTableContainer" style="border-collapse: collapse;
+      background-color: white;
+      width: 100%; "></div>
+    <div id="plot"></div>
   </div>
 
   <script>
     let csvdata = [];
-    // document.getElementById("fileInput").addEventListener("change", function (event) {
-    //   const file = event.target.files[0];  // Get the first file selected
-    //   if (file) {
-    //     const reader = new FileReader();  // Create a new FileReader
-    //     reader.onload = function (e) {
-    //       const csvdata = e.target.result;  // Get the file content as text
-    //       // console.log("Raw CSV Data:", csvdata)
-    //       csvdata = d3.csvParse(csvdata);  // Parse CSV using D3
-    //       console.log("Parsed Data:", csvdata);
-    //       plotStrategy(1, 'All');
-    //     };
-    //     reader.readAsText(file);  // Read the file as text
-    //   }
-    // });
+    let strategyNum;
+    let year;
+    let page;
+    let sampleData;
 
+    d3.json("/data").then(function (data) {
+      csvdata = data;
+      updatePage();
+    });
 
-    d3.csv("https://raw.githubusercontent.com/SGPPellow/Stock_Index_Futures_Timing_Strategy/refs/heads/main/output.csv", function (d) {
-      return {
-        date: d.date,
-        Signal1_day_rtn: +d.Signal1_day_rtn,
-        Position1: d.Position1,
-        Signal2_day_rtn: +d.Signal2_day_rtn,
-        Position2: d.Position2,
-        Signal3_day_rtn: +d.Signal3_day_rtn,
-        Position3: d.Position3,
-        Signal4_day_rtn: +d.Signal4_day_rtn,
-        Position4: d.Position4,
-        Signal5_day_rtn: +d.Signal5_day_rtn,
-        Position5: d.Position5
-      }
-    })
-      .then(function (data) {
-        csvdata = data;
-        updatePage();
-      })
+    function updatePage() {
+      strategyNum = +strategy_select.value;
+      year = year_select.value;
+      page = page_select.value;
 
-    function plotStrategy(n, year) {
-
-      var sampleData;
       if (year === 'All') {
         sampleData = csvdata;
       } else {
         sampleData = csvdata.filter(row => row.date.startsWith(year));
       }
+
       let c1 = 500000, c2 = 500000, c3 = 500000, c4 = 500000, c5 = 500000;
-      sampleData.forEach(d => {
-        c1 *= d.Signal1_day_rtn;
-        c2 *= d.Signal2_day_rtn;
-        c3 *= d.Signal3_day_rtn;
-        c4 *= d.Signal4_day_rtn;
-        c5 *= d.Signal5_day_rtn;
+      console.log(sampleData)
+      sampleData.forEach((d, i) => {
+        c1 = (d.Signal1_day_rtn == null || c1 == null) ? null : c1 * d.Signal1_day_rtn;
+        c2 = (d.Signal2_day_rtn == null || c2 == null) ? null : c2 * d.Signal2_day_rtn;
+        c3 = (d.Signal3_day_rtn == null || c3 == null) ? null : c3 * d.Signal3_day_rtn;
+        c4 = (d.Signal4_day_rtn == null || c4 == null) ? null : c4 * d.Signal4_day_rtn;
+        c5 = (d.Signal5_day_rtn == null || c5 == null) ? null : c5 * d.Signal5_day_rtn;
+
         d.Signal1_cum_value = c1;
         d.Signal2_cum_value = c2;
         d.Signal3_cum_value = c3;
@@ -140,7 +125,76 @@
         d.Signal5_cum_value = c5;
       });
 
-      const x = sampleData.map(row => row.date)
+      if (page === "资金曲线") {
+
+        sampleData = sampleData.slice(0, -1);
+        calculatePerformanceMetrics(strategyNum, year);
+        plotStrategy(strategyNum, year);
+
+      } else if (page === "每日信号") {
+        document.getElementById('plot').innerHTML = `<div id="metricsTableContainer"></div>`;
+        const column_name = ['日期', '持仓', '当日收益率', '累计资金']
+        const selectedColumns = ["date", `Position${strategyNum}`, `Signal${strategyNum}_day_rtn`, `Signal${strategyNum}_cum_value`];
+        const container = d3.select("#metricsTableContainer");
+        container.html("");
+
+        const tableWrapper = container.append("div")
+          .style("max-height", "900px")   // 👈 limit height
+          .style("overflow-y", "auto")    // 👈 vertical scrollbar
+          .style("display", "block")       // ensure block-level
+          .style("border", "1px solid #ccc");
+
+        const table = tableWrapper.append("table")
+          .style("border-collapse", "collapse")
+          .style("width", "100%")
+          .style("font-family", "Arial, sans-serif")
+          .style("font-size", "14px")
+          .style("text-align", "center")
+          .style("border", "1px solid #ddd")
+          .style("box-shadow", "0 2px 5px rgba(0,0,0,0.1)")
+          .style("background-color", "#fdfdfd");
+
+        table.append("thead").append("tr")
+          .selectAll("th")
+          .data(column_name)
+          .enter()
+          .append("th")
+          .text(d => d)
+          .style("padding", "10px 12px")
+          .style("border-bottom", "2px solid ")
+          .style("background-color", "#f2f2f2")
+          .style("color", "#333")
+          .style("font-weight", "bold")
+          .style("position", "sticky")  // optional: sticky header
+          .style("top", "0")
+          .style("z-index", "1");
+
+        const rows = table.append("tbody")
+          .selectAll("tr")
+          .data([...sampleData].reverse())
+          .enter()
+          .append("tr");
+
+        rows.selectAll("td")
+          .data((d) => selectedColumns.map(col => {
+            if (col == `Signal${strategyNum}_day_rtn`) {
+              return d[col] != null ? d[col].toFixed(6) : "";
+            } else if (col == `Signal${strategyNum}_cum_value`) {
+              return d[col] != null ? Math.round(d[col]) : ""; // round and handle null
+            }
+            return d[col]; // otherwise display as-is
+          }))
+          .enter()
+          .append("td")
+          .text(d => d)
+          .style("border", "1px solid black")
+          .style("padding", "4px");
+      }
+    }
+
+    function plotStrategy(n, year) {
+
+      const x = sampleData.map(row => row.date);
       const y = sampleData.map(row => +row[`Signal${n}_cum_value`])
       const position = sampleData.map(row => row[`Position${n}`])
 
@@ -151,7 +205,7 @@
         name: '',
         text: position,
         line: {
-          color: '#1f77b4',
+          color: '#0077B6',
           width: 6
         },
         hovertemplate: '<b>Date</b>: %{x|%Y-%m-%d}<br>' + '<b>Value</b>: %{y}<br>' + '<b>Position</b>: %{text}'
@@ -173,24 +227,26 @@
           font: {
             size: 18,
           }
+        },
+        height: window.innerHeight * 0.7,
+        margin: {
+          t: 20,  // top
+          r: 20,  // right
+          l: 50,  // left (keep enough for y-axis labels)
+          b: 20   // bottom (enough for x-axis labels)
         }
+
       };
 
       Plotly.newPlot('plot', [trace], layout);
-      calculatePerformanceMetrics(n, year);
 
     }
 
     function calculatePerformanceMetrics(n, year) {
 
       var startValue = 500000;
-      var sampleData;
       var startDate;
-      if (year === 'All') {
-        sampleData = csvdata;
-      } else {
-        sampleData = csvdata.filter(row => row.date.startsWith(year));
-      }
+
       startDate = sampleData[0]['date'];
       var endDate = sampleData[sampleData.length - 1]['date'];
       var endValue = sampleData[sampleData.length - 1][[`Signal${n}_cum_value`]]
@@ -219,7 +275,7 @@
       let tableHTML;
       if (year === 'All') {
         tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+          <table>
             <tbody>
               <tr>
                 <td style="padding: 10px; padding-right: 60px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
@@ -238,7 +294,7 @@
         `;
       } else {
         tableHTML = `
-          <table style=" border-collapse: collapse; background-color: white; font-size: 20px; width: 150%;">
+          <table>
             <tbody>
               <tr>
                 <td style="padding: 10px;"><b>时间</b>:&nbsp&nbsp${startDate} ~ ${endDate}</td>
@@ -259,46 +315,9 @@
       document.getElementById('metricsTableContainer').innerHTML = tableHTML;
     }
 
-    function updatePage() {
-      const strategyNum = +strategy_select.value;
-      const year = year_select.value;
-      const page = page_select.value;
-
-      // Clear previous plot and table first
-      document.getElementById('plot').innerHTML = `<div id="metricsTableContainer" style="position: absolute; top: 140px; left: 15px; z-index: 10;"></div>`;
-
-      if (page === "资金曲线") {
-        // Call your existing functions
-        console.log(strategyNum)
-        plotStrategy(strategyNum, year);
-      } else if (page === "每日信号") {
-        // Leave everything blank for now
-        // Later you can write your new page logic here
-        document.getElementById('plot').innerHTML = `<div id="metricsTableContainer"></div>`;
-      }
-    }
-
     strategy_select.addEventListener('change', updatePage);
     year_select.addEventListener('change', updatePage);
     page_select.addEventListener('change', updatePage);
-
-
-    // document.getElementById("strategy_select").addEventListener('change', function (e) {
-    //   const strategyNum = +e.target.value;
-    //   const year = document.getElementById("year_select").value;
-    //   if (mode == '资金曲线') {
-    //     plotStrategy(strategyNum, year);
-    //   }
-
-    // })
-
-    // document.getElementById("year_select").addEventListener('change', function (e) {
-    //   const year = e.target.value;
-    //   const strategyNum = document.getElementById("strategy_select").value;
-    //   if (mode == '资金曲线') {
-    //     plotStrategy(strategyNum, year);
-    //   }
-    // });
 
   </script>
 </body>
